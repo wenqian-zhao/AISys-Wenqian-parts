@@ -27,7 +27,7 @@
 
 
 
-#### 5.4.2.1历代TPU产品
+#### 5.4.2.2历代TPU产品
 在前文中，我们讨论了CPU的不同型号，现在让我们将注意力转向谷歌的TPU产品线。以下表格中除了芯片之外，随着芯片技术的不断进步，谷歌推出了TPU Pod，这是一种由众多TPU单元构成的超大规模计算系统，专为处理大量深度学习和AI领域的并行计算任务而设计。除了具有超强的算力之外，TPU Pod装备了高速的互联网络，保证了TPU设备之间无缝的数据传输以保证强大的数据、模型层的高效拓展性。
 
 |名称       | 时间        | 性能                              | 应用                |
@@ -42,11 +42,47 @@
 |               TPUv4 Pod | 2022年    | -                                | 数据中心训练和推理 |
 
 
-随着时间的推移，谷歌不仅在大型数据中心部署了先进技术，还洞察到将这些技术应用于消费电子产品，尤其是智能手机市场的巨大潜力。早在2017年，谷歌便在Pixel 2 和 Pixel 3上搭载了Pixel Visual Core，成为了谷歌针对消费类产品的首个定制图像芯片，而在2019年10月发布的Pixel 4上，谷歌基于Edge TPU的框架研发了Pixel Visual Core的继任，Pixel Neural Core。而谷歌在 Pixel 产品线上对于TPU的依赖也一直延续到了今天。
+随着时间的推移，谷歌不仅在大型数据中心部署了先进技术，还洞察到将这些技术应用于消费电子产品，尤其是智能手机市场的巨大潜力。于是在2017年，谷歌在Pixel 2 和 Pixel 3上便搭载了自家的Pixel Visual Core，成为了谷歌针对消费类产品的首个定制图像芯片。之后，谷歌基于Edge TPU的框架研发了Pixel Visual Core的继任，Pixel Neural Core，在2019年10月发布的Pixel 4上首次搭载。之后，谷歌在 Pixel 产品线上对于TPU的依赖也一直延续到了今天。
 
-在这个AI爆发的大时代，Google Silicon 高级总监 Monika Gupta 说到：“我们的合作与Tensor一直不仅仅局限于追求速度和性能这样的传统评价标准。我们的目标是推动移动计算体验的进步。在最新的Tensor G3芯片中，我们对每个关键的系统组件都进行了升级，以便更好地支持设备上的生成式人工智能技术。这包括最新型号的ARM中央处理器、性能更强的图形处理器、全新的图像信号处理器和图像数字信号处理器，以及我们最新研发的，专门为运行Google的人工智能模型而量身打造的TPU。”[<sup>[3]</sup>](#ref3)
+在这个AI爆发的大时代，谷歌在移动端的AI也掷下豪赌，Google Silicon 的高级总监 Monika Gupta 说到：“我们的合作与Tensor一直不仅仅局限于追求速度和性能这样的传统评价标准。我们的目标是推动移动计算体验的进步。在最新的Tensor G3芯片中，我们对每个关键的系统组件都进行了升级，以便更好地支持设备上的生成式人工智能技术。这包括最新型号的ARM中央处理器、性能更强的图形处理器、全新的图像信号处理器和图像数字信号处理器，以及我们最新研发的，专门为运行Google的人工智能模型而量身打造的TPU。”[<sup>[3]</sup>](#ref3)
+
+[等待补图]
+
+### 5.4.3 TPU的演进
+
+#### 5.4.3.1 TPU v1概览：确定性模型（Deterministic Execution Model）
+
+第一代TPU主要服务于8比特的矩阵计算，由CPU通过PCIe 3.0总线驱动CISC指令。它采用28nm工艺制造，频率为700MHz,热设计功耗为40瓦。它具有28MiB的芯片内存和4MiB 32位累加器,用于存储256x256系统阵列的8位乘法器的结果。TPU封装内还有8GiB双通道2133MHz DDR3 SDRAM,带宽为34GB/s。指令能够将数据传输至/离开主机、执行矩阵乘法或卷积运算,并应用激活函数。
+
+#### 5.4.3.2 TPU v1性能
+
+受限于时代，初代TPU主要针对2015年左右最火的深度学习网络进行优化，主要分为以下三类：
+
+- MLP 多层感知机（**M**ulti**L**ayer **P**erceptron）
+- CNN 卷积神经网络（**C**onvolutional **N**eural **N**etwork）
+- RNN 递归神经网络（**R**ecurrent **N**eural **N**etwork）& LSTM 长短期记忆（**L**ong **S**hort-**T**erm **M**emory）
+  
+而在这三类中，由于RNN和LSTM的高复杂度，初代TPU很难去处理这类神经网络。
+
+那么为什么TPU的推理性能够傲视群雄呢？主要原因也有三点：
+- **低精度的数据格式（Reduced Precision）**，在损失极小准确率的基础上带来了低功耗、高速度、需求更小带宽的种种优点。
+- **矩阵乘加专用处理器（Matrix Processor）**，引入脉动式数据流的支持使得TPU能够更高效地获取可复用的数据，从而大幅加速了矩阵的计算。
+- **专用硬件（Minimal and Deterministic Design）**，相比于CPU和GPU，TPU通过去除缓存、分支预测和乱序执行等微架构特性，使其能专注于高效执行复杂计算任务。
+
+**特性一：低精度**
+神经网络在进行推理时，并不总是需要32位浮点数（FP32）或16位浮点数（FP16）以上的计算精度。TPU通过引入一种称为**量化**的技术，可以将神经网络模型的权重和激活值从FP32或FP16转换为8位整数（Int8），从而实现模型的压缩。这种转换使得8位整数能够近似表示在预设最小值和最大值之间的任意数值，优化了模型的存储和计算效率。
+
+在下图从FP32量化到Int8的过程中，虽然单个数据点无法维持FP32的超高精确度，整体数据分布却能保持大致准确。尽管连续数值被压缩到较小的离散范围可能引起一定精度损失，但得益于神经网络的泛化能力，在推理场景，特别是分类任务中，量化后的神经网络模型能够在保持接近原始FP32/FP16精度水平的同时，实现更快的推理速度和更低的资源消耗。
+
+![FP32INT8](https://storage.googleapis.com/gweb-cloudblog-publish/images/tpu-148g2u.max-1500x1500.png)
+
+**特性二：脉动阵列**
+在TPU中有一个关键组件叫做 MXU（Matrix Multiply Unit，矩阵乘法单元），专门设计用于高效执行大规模的Int8矩阵加乘法运算。MXU采用了与典型的CPU和GPU截然不同的架构，称为**脉动阵列**。
+CPU设计用于执行任何情况的计算，为了实现这种通用性，CPU在寄存器（Register）中存储值，程序指示算术逻辑单元（ALU）读取哪些寄存器、执行什么操作（如加法、乘法或逻辑）以及将结果放入哪个寄存器。程序由这些读取/操作/写入操作的序列组成。所有这些支持通用性的特性（寄存器、ALU和程序控制）在功率和芯片面积方面都有成本。
 
 
+
+![脉动阵列](https://storage.googleapis.com/gweb-cloudblog-publish/images/tpu-17u39j.max-500x500.PNG)
 
 
 ### 参考文献
@@ -54,3 +90,5 @@
 1. [In-Datacenter Performance Analysis of a Tensor Processing Unit](https://arxiv.org/abs/1704.04760)
 2. [An in-depth look at Google’s first Tensor Processing Unit (TPU)](https://cloud.google.com/blog/products/ai-machine-learning/an-in-depth-look-at-googles-first-tensor-processing-unit-tpu)
 3. [Google Tensor G3: The new chip that gives your Pixel an AI upgrade](https://blog.google/products/pixel/google-tensor-g3-pixel-8/)
+4. [Wikipedia-Tensor Processing Unit](https://en.wikipedia.org/wiki/Tensor_Processing_Unit#cite_note-TPU_memory-15)
+5. 
